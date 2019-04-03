@@ -16,7 +16,7 @@ class MaximalCliqueEnumerator {
     void enumerateCliques();
     void expandClique(SearchTreeNode *);
     void outputClique(vertex_id cliqueSize);
-    vertex_id findPivot(SearchTreeNode *) const;
+    std::pair<vertex_id, bool> findPivot(SearchTreeNode *) const;
     void printClique(vertex_id cliqueSize);
 public:
     MaximalCliqueEnumerator(size_t workerID, const Graph &g, LoadBalancer &b, std::ostream &out, size_t numThreads, std::mutex &outputBarrier);

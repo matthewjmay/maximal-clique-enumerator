@@ -29,7 +29,6 @@ void MaximalCliqueEnumerator::operator()() {
 }
 
 void MaximalCliqueEnumerator::generateInitialCliques() {
-    // std::cout << "generating initial cliques" << std::endl;
     // create initial cliques of size 1
     // use ID to find subset of vertices this algorithm instance is responsible for
     vertex_id numVertices = pImpl_->g_.getNumVertices();
@@ -86,19 +85,12 @@ void MaximalCliqueEnumerator::expandClique(SearchTreeNode *n) {
         }
         return;
     }
-//    std::cout << "CANDIDATES:\n";
-//    for (vertex_id can : n->candidates) {
-//        std::cout << can << " ";
-//    }
-//    std::cout << std::endl;
-//
-//    std::cout << "VISITED:\n";
-//    for (vertex_id vis : n->visited) {
-//        std::cout << vis << " ";
-//    }
-//    std::cout << std::endl;
 
-    vertex_id pivot = findPivot(n);
+    const auto &pivotPair = findPivot(n);
+    if (pivotPair.second) {
+        return;
+    }
+    vertex_id pivot = pivotPair.first;
     // std::cout << "using pivot " << pivot << std::endl;
     for (long int i = n->candidates.size() - 1; i >= 0; --i) {
         vertex_id v = n->candidates[i];
@@ -156,7 +148,7 @@ void MaximalCliqueEnumerator::outputClique(vertex_id cliqueSize) {
     pImpl_->out_ << std::endl;
 }
 
-vertex_id MaximalCliqueEnumerator::findPivot(SearchTreeNode *n) const {
+std::pair<vertex_id, bool> MaximalCliqueEnumerator::findPivot(SearchTreeNode *n) const {
     vertex_id currMinNonConnectivity = n->candidates.size(), currPivot = 0;
 
     for (vertex_id i : n->candidates) {
@@ -171,9 +163,14 @@ vertex_id MaximalCliqueEnumerator::findPivot(SearchTreeNode *n) const {
         if (nonConnectivity <= currMinNonConnectivity) {
             currMinNonConnectivity = nonConnectivity;
             currPivot = i;
+            if (currMinNonConnectivity == 0) {
+                break;
+            }
         }
     }
 
+    // it is important that we check visited second, since selecting a pivot from visited
+    // will result in one less job
     for (vertex_id i : n->visited) {
         vertex_id nonConnectivity = 0;
         for (vertex_id j : n->candidates) {
@@ -186,9 +183,13 @@ vertex_id MaximalCliqueEnumerator::findPivot(SearchTreeNode *n) const {
         if (nonConnectivity <= currMinNonConnectivity) {
             currMinNonConnectivity = nonConnectivity;
             currPivot = i;
+            if (currMinNonConnectivity == 0) {
+                // vertex exists in visited that is connected to all candidates, terminate early
+                return { currPivot, true };
+            }
         }
     }
-    return currPivot;
+    return { currPivot, false };
 }
 
 MaximalCliqueEnumerator::~MaximalCliqueEnumerator() = default;
